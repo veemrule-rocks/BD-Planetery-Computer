@@ -8,19 +8,34 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import Dashboard from "@/pages/Dashboard";
+import FloodMonitoring from "@/pages/FloodMonitoring";
+import ClimateData from "@/pages/ClimateData";
+import SatelliteImagery from "@/pages/SatelliteImagery";
 import NotFound from "@/pages/not-found";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Dashboard} />
-      <Route path="/flood" component={() => <div className="p-6">Flood Monitoring (Coming Soon)</div>} />
-      <Route path="/cyclone" component={() => <div className="p-6">Cyclone Tracking (Coming Soon)</div>} />
-      <Route path="/climate" component={() => <div className="p-6">Climate Data (Coming Soon)</div>} />
-      <Route path="/landuse" component={() => <div className="p-6">Land Use Analysis (Coming Soon)</div>} />
-      <Route path="/borders" component={() => <div className="p-6">Border Regions (Coming Soon)</div>} />
-      <Route path="/reports" component={() => <div className="p-6">Reports & Analytics (Coming Soon)</div>} />
-      <Route path="/settings" component={() => <div className="p-6">Settings (Coming Soon)</div>} />
+      <Route path="/flood" component={FloodMonitoring} />
+      <Route path="/cyclone" component={() => <div className="p-6">
+        <h1 className="text-2xl font-bold mb-2">Cyclone Tracking</h1>
+        <p className="text-muted-foreground">Real-time cyclone monitoring and historical track analysis (Coming Soon)</p>
+      </div>} />
+      <Route path="/climate" component={ClimateData} />
+      <Route path="/landuse" component={() => <div className="p-6">
+        <h1 className="text-2xl font-bold mb-2">Land Use Analysis</h1>
+        <p className="text-muted-foreground">Agricultural, urban, and forest land classification (Coming Soon)</p>
+      </div>} />
+      <Route path="/borders" component={() => <div className="p-6">
+        <h1 className="text-2xl font-bold mb-2">Border Regions</h1>
+        <p className="text-muted-foreground">Cross-border environmental monitoring and regional analysis (Coming Soon)</p>
+      </div>} />
+      <Route path="/reports" component={SatelliteImagery} />
+      <Route path="/settings" component={() => <div className="p-6">
+        <h1 className="text-2xl font-bold mb-2">Settings</h1>
+        <p className="text-muted-foreground">Configure dashboard preferences and data sources (Coming Soon)</p>
+      </div>} />
       <Route component={NotFound} />
     </Switch>
   );

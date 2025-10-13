@@ -17,7 +17,7 @@ import {
   Thermometer,
   Sprout,
   MapPinned,
-  FileText,
+  Satellite,
   Settings,
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
@@ -54,9 +54,9 @@ const menuItems = [
     icon: MapPinned,
   },
   {
-    title: "Reports & Analytics",
+    title: "Satellite Imagery",
     url: "/reports",
-    icon: FileText,
+    icon: Satellite,
   },
   {
     title: "Settings",
