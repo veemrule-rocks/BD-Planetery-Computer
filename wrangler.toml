@@ -1,6 +1,3 @@
-# Cloudflare Pages configuration
-name = "bengalinsight"
-compatibility_date = "2024-10-14"
-
-# For Pages deployment via GitHub integration,
-# build settings are configured in Cloudflare Dashboard
+name = 'bd01'
+pages_build_output_dir = 'dist'
+compatibility_date = '2024-10-14'
