@@ -1,3 +1,9 @@
-name = 'bd01'
-pages_build_output_dir = 'dist'
-compatibility_date = '2024-10-14'
+name = "bd01"
+main = "worker/index.ts"
+compatibility_date = "2024-10-14"
+
+[build]
+command = "npm run build"
+
+[site]
+bucket = "./dist"
