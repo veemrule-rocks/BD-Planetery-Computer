@@ -11,7 +11,6 @@
     "check": "tsc"
   },
   "dependencies": {
-    "@cloudflare/kv-asset-handler": "^0.3.4",
     "@hookform/resolvers": "^3.10.0",
     "@radix-ui/react-accordion": "^1.2.4",
     "@radix-ui/react-alert-dialog": "^1.1.7",
@@ -47,6 +46,7 @@
     "date-fns": "^3.6.0",
     "embla-carousel-react": "^8.6.0",
     "framer-motion": "^11.13.1",
+    "hono": "^4.9.12",
     "input-otp": "^1.4.2",
     "lucide-react": "^0.453.0",
     "next-themes": "^0.4.6",

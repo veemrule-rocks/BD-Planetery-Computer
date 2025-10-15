@@ -1,18 +1,77 @@
-import { getAssetFromKV } from '@cloudflare/kv-asset-handler';
+import { Hono } from 'hono';
+
+type Env = {
+  ASSETS: Fetcher;
+};
+
+const app = new Hono<{ Bindings: Env }>();
 
 // Mock data functions
 function getCurrentMetrics() {
   return [
-    { id: '1', type: 'water_level', value: 6.2, unit: 'm', location: 'Brahmaputra River, Gazipur', district: 'Gazipur', severity: 'caution' },
-    { id: '2', type: 'wind_speed', value: 45, unit: 'km/h', location: "Cox's Bazar", district: "Cox's Bazar", severity: 'critical' },
-    { id: '3', type: 'temperature', value: 32, unit: '°C', location: 'Dhaka', district: 'Dhaka', severity: 'safe' },
+    {
+      id: '1',
+      type: 'water_level',
+      value: 6.2,
+      unit: 'm',
+      location: 'Brahmaputra River, Gazipur',
+      district: 'Gazipur',
+      division: 'Dhaka',
+      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+      severity: 'caution',
+      trend: { value: 12, direction: 'up' },
+    },
+    {
+      id: '2',
+      type: 'wind_speed',
+      value: 45,
+      unit: 'km/h',
+      location: "Cox's Bazar",
+      district: "Cox's Bazar",
+      division: 'Chittagong',
+      timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+      severity: 'critical',
+      trend: { value: 18, direction: 'up' },
+    },
+    {
+      id: '3',
+      type: 'temperature',
+      value: 32,
+      unit: '°C',
+      location: 'Dhaka',
+      district: 'Dhaka',
+      division: 'Dhaka',
+      timestamp: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
+      severity: 'safe',
+      trend: { value: 5, direction: 'stable' },
+    },
   ];
 }
 
 function getActiveAlerts() {
   return [
-    { id: '1', severity: 'critical', type: 'Flood Warning', location: 'Gazipur District', description: 'Water level rising rapidly' },
-    { id: '2', severity: 'high', type: 'Cyclone Alert', location: "Cox's Bazar", description: 'Tropical cyclone approaching' },
+    {
+      id: '1',
+      severity: 'critical',
+      type: 'Flood Warning',
+      location: 'Gazipur District',
+      district: 'Gazipur',
+      division: 'Dhaka',
+      description: 'Water level rising rapidly in Brahmaputra River. Residents advised to move to higher ground.',
+      issuedAt: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+    },
+    {
+      id: '2',
+      severity: 'high',
+      type: 'Cyclone Alert',
+      location: "Cox's Bazar",
+      district: "Cox's Bazar",
+      division: 'Chittagong',
+      description: 'Tropical cyclone approaching coastal areas. Strong winds expected within 24 hours.',
+      issuedAt: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
+      expiresAt: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(),
+    },
   ];
 }
 
@@ -38,110 +97,95 @@ function getDistrictData() {
     { district: 'Dhaka', waterLevel: '5.2', rainfall: '145', status: 'Normal' },
     { district: 'Chittagong', waterLevel: '6.8', rainfall: '320', status: 'Caution' },
     { district: 'Sylhet', waterLevel: '7.5', rainfall: '450', status: 'Warning' },
+    { district: 'Rajshahi', waterLevel: '4.8', rainfall: '98', status: 'Normal' },
+    { district: 'Khulna', waterLevel: '5.9', rainfall: '210', status: 'Normal' },
   ];
 }
 
 function getRegionData(district: string) {
   const regions: Record<string, any> = {
-    gazipur: { name: 'Gazipur', population: '5.2 million', riskLevel: 'high', waterLevel: '6.8m' },
-    dhaka: { name: 'Dhaka', population: '21.7 million', riskLevel: 'medium', waterLevel: '5.2m' },
+    gazipur: {
+      name: 'Gazipur',
+      population: '5.2 million',
+      riskLevel: 'high',
+      waterLevel: '6.8m',
+      elevation: '11m',
+      vulnerableAreas: ['Tongi', 'Kaliakair', 'Kapasia'],
+    },
+    dhaka: {
+      name: 'Dhaka',
+      population: '21.7 million',
+      riskLevel: 'medium',
+      waterLevel: '5.2m',
+      elevation: '4m',
+      vulnerableAreas: ['Mirpur', 'Demra', 'Kamrangirchar'],
+    },
+    chittagong: {
+      name: 'Chittagong',
+      population: '8.3 million',
+      riskLevel: 'high',
+      waterLevel: '6.8m',
+      elevation: '5m',
+      vulnerableAreas: ['Patenga', 'Halishahar', 'Agrabad'],
+    },
   };
   return regions[district.toLowerCase()] || null;
 }
 
-// API Router
-async function handleAPIRequest(request: Request): Promise<Response> {
-  const url = new URL(request.url);
-  const path = url.pathname;
+// API Routes
+app.get('/api/alerts', (c) => {
+  return c.json(getActiveAlerts());
+});
 
-  // API Routes
-  if (path === '/api/alerts') {
-    return new Response(JSON.stringify(getActiveAlerts()), {
-      headers: { 'Content-Type': 'application/json' },
-    });
+app.get('/api/climate/data', (c) => {
+  const year = parseInt(c.req.query('year') || '2024');
+  return c.json(getClimateData(year));
+});
+
+app.get('/api/districts/data', (c) => {
+  return c.json(getDistrictData());
+});
+
+app.get('/api/metrics/current', (c) => {
+  return c.json(getCurrentMetrics());
+});
+
+app.get('/api/region/:district', (c) => {
+  const district = c.req.param('district');
+  const data = getRegionData(district);
+  
+  if (!data) {
+    return c.json({ error: 'District not found' }, 404);
   }
+  
+  return c.json(data);
+});
 
-  if (path === '/api/climate/data') {
-    const year = parseInt(url.searchParams.get('year') || '2024');
-    return new Response(JSON.stringify(getClimateData(year)), {
-      headers: { 'Content-Type': 'application/json' },
-    });
+app.get('/api/satellite/:feature', (c) => {
+  const feature = c.req.param('feature');
+  return c.json({
+    message: 'Satellite API - Coming soon',
+    feature: feature,
+    status: 'development',
+  });
+});
+
+// Serve static assets - fallback to ASSETS binding
+app.get('*', async (c) => {
+  // Try to fetch from ASSETS binding
+  const assetResponse = await c.env.ASSETS.fetch(c.req.raw);
+  
+  // If asset is found, return it
+  if (assetResponse.status !== 404) {
+    return assetResponse;
   }
+  
+  // If not found, try to serve index.html for SPA routing
+  const url = new URL(c.req.url);
+  url.pathname = '/index.html';
+  const indexResponse = await c.env.ASSETS.fetch(url.toString());
+  
+  return indexResponse;
+});
 
-  if (path === '/api/districts/data') {
-    return new Response(JSON.stringify(getDistrictData()), {
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
-
-  if (path === '/api/metrics/current') {
-    return new Response(JSON.stringify(getCurrentMetrics()), {
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
-
-  if (path.startsWith('/api/region/')) {
-    const district = path.split('/api/region/')[1];
-    const data = getRegionData(district);
-    if (!data) {
-      return new Response(JSON.stringify({ error: 'District not found' }), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
-    return new Response(JSON.stringify(data), {
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
-
-  if (path.startsWith('/api/satellite/')) {
-    return new Response(JSON.stringify({ message: 'Satellite API - Coming soon', features: [] }), {
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
-
-  return new Response('API endpoint not found', { status: 404 });
-}
-
-// Main fetch handler
-export default {
-  async fetch(request: Request, env: any, ctx: any): Promise<Response> {
-    const url = new URL(request.url);
-
-    // Handle API routes
-    if (url.pathname.startsWith('/api/')) {
-      return handleAPIRequest(request);
-    }
-
-    // Serve static assets from Workers Sites
-    try {
-      return await getAssetFromKV(
-        {
-          request,
-          waitUntil: ctx.waitUntil.bind(ctx),
-        },
-        {
-          ASSET_NAMESPACE: env.__STATIC_CONTENT,
-          ASSET_MANIFEST: JSON.parse(__STATIC_CONTENT_MANIFEST),
-        }
-      );
-    } catch (e) {
-      // If asset not found, try serving index.html for SPA routing
-      try {
-        const indexRequest = new Request(new URL('/index.html', request.url).toString(), request);
-        return await getAssetFromKV(
-          {
-            request: indexRequest,
-            waitUntil: ctx.waitUntil.bind(ctx),
-          },
-          {
-            ASSET_NAMESPACE: env.__STATIC_CONTENT,
-            ASSET_MANIFEST: JSON.parse(__STATIC_CONTENT_MANIFEST),
-          }
-        );
-      } catch (err) {
-        return new Response('Not Found', { status: 404 });
-      }
-    }
-  },
-};
+export default app;
