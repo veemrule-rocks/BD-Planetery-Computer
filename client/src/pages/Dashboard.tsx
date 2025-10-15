@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { MapPlaceholder } from "@/components/MapPlaceholder";
+import { InteractiveMap } from "@/components/InteractiveMap";
 import { MetricCard } from "@/components/MetricCard";
 import { AlertCard } from "@/components/AlertCard";
 import { LayerControlPanel } from "@/components/LayerControlPanel";
@@ -79,14 +79,17 @@ export default function Dashboard() {
 
       <div className="flex-1 flex overflow-hidden">
         <div className="flex-1 relative">
-          <MapPlaceholder />
+          {/* Interactive Map with Data */}
+          <InteractiveMap alerts={alerts} metrics={metrics} />
           
-          <div className="absolute top-4 left-4 z-10">
+          {/* Layer Control Panel - Top Left - z-20 to be above alerts */}
+          <div className="absolute top-4 left-4 z-20">
             <LayerControlPanel />
           </div>
 
+          {/* Metric Cards - Top Right - z-10 */}
           <div className="absolute top-4 right-4 z-10 space-y-2">
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-2 max-w-2xl">
               {metrics.slice(0, 4).map((metric) => (
                 <MetricCard
                   key={metric.id}
@@ -106,8 +109,9 @@ export default function Dashboard() {
             </div>
           </div>
 
+          {/* Region Detail Panel - Bottom Right - z-30 highest priority when open */}
           {selectedRegion && (
-            <div className="absolute bottom-4 right-4 z-10">
+            <div className="absolute bottom-4 right-4 z-30">
               <RegionDetailPanel
                 region={selectedRegion}
                 onClose={() => setSelectedRegion(null)}
@@ -115,10 +119,11 @@ export default function Dashboard() {
             </div>
           )}
 
+          {/* Alert Panel - Bottom Left - z-10 */}
           {showAlerts && alerts.length > 0 && (
-            <div className="absolute bottom-4 left-4 z-10 w-96">
-              <ScrollArea className="h-80">
-                <div className="space-y-2">
+            <div className="absolute bottom-4 left-4 z-10 w-80 max-w-[calc(100vw-2rem)]">
+              <ScrollArea className="h-80 rounded-lg border bg-card">
+                <div className="space-y-2 p-2">
                   {alerts.map((alert) => (
                     <AlertCard
                       key={alert.id}
