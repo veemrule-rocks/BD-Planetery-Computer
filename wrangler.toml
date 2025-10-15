@@ -2,8 +2,11 @@ name = "bd01"
 main = "worker/index.ts"
 compatibility_date = "2024-10-14"
 
-[build]
-command = "npm run build"
-
+# Workers Sites configuration
 [site]
 bucket = "./dist"
+
+# Build configuration
+[build]
+command = "npm run build"
+watch_dirs = ["client/src", "worker"]
