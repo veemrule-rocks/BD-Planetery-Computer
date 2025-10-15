@@ -11,6 +11,7 @@
     "check": "tsc"
   },
   "dependencies": {
+    "@cloudflare/kv-asset-handler": "^0.3.4",
     "@hookform/resolvers": "^3.10.0",
     "@radix-ui/react-accordion": "^1.2.4",
     "@radix-ui/react-alert-dialog": "^1.1.7",
