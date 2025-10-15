@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { serveStatic } from 'hono/cloudflare-workers';
-import { getActiveAlerts, getClimateData, getDistrictData, getCurrentMetrics, getRegionDetails } from '../functions/_shared/environmentalData';
-import { searchSatelliteImagery, getSentinel1Latest, getSentinel2Latest } from '../functions/_shared/planetaryComputer';
+import { getActiveAlerts, getClimateData, getDistrictData, getCurrentMetrics, getRegionData } from '../functions/_shared/environmentalData';
+import { searchSatelliteImagery, getLatestSentinel2, getLatestSentinel1SAR } from '../functions/_shared/planetaryComputer';
 
 const app = new Hono();
 
@@ -52,7 +52,12 @@ app.get('/api/metrics/current', (c) => {
 app.get('/api/region/:district', (c) => {
   try {
     const district = c.req.param('district');
-    const regionData = getRegionDetails(district);
+    const regionData = getRegionData(district);
+    
+    if (!regionData) {
+      return c.json({ error: 'District not found', message: `No data available for ${district}` }, 404);
+    }
+    
     return c.json(regionData);
   } catch (error: any) {
     return c.json({ error: 'Failed to fetch region data', message: error?.message }, 500);
@@ -61,8 +66,21 @@ app.get('/api/region/:district', (c) => {
 
 app.get('/api/satellite/search', async (c) => {
   try {
-    const query = c.req.query('query') || '';
-    const results = await searchSatelliteImagery(query);
+    const collection = c.req.query('collection') || 'sentinel-2-l2a';
+    const limit = parseInt(c.req.query('limit') || '10');
+    const cloudCover = parseInt(c.req.query('cloudCover') || '20');
+    
+    const endDate = new Date().toISOString().split('T')[0];
+    const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    
+    const results = await searchSatelliteImagery({
+      collection: collection as any,
+      startDate,
+      endDate,
+      cloudCover,
+      limit,
+    });
+    
     return c.json(results);
   } catch (error: any) {
     return c.json({ error: 'Failed to search satellite imagery', message: error?.message }, 500);
@@ -71,7 +89,7 @@ app.get('/api/satellite/search', async (c) => {
 
 app.get('/api/satellite/sentinel1/latest', async (c) => {
   try {
-    const data = await getSentinel1Latest();
+    const data = await getLatestSentinel1SAR();
     return c.json(data);
   } catch (error: any) {
     return c.json({ error: 'Failed to fetch Sentinel-1 data', message: error?.message }, 500);
@@ -80,7 +98,7 @@ app.get('/api/satellite/sentinel1/latest', async (c) => {
 
 app.get('/api/satellite/sentinel2/latest', async (c) => {
   try {
-    const data = await getSentinel2Latest();
+    const data = await getLatestSentinel2();
     return c.json(data);
   } catch (error: any) {
     return c.json({ error: 'Failed to fetch Sentinel-2 data', message: error?.message }, 500);
