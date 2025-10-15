@@ -1,51 +1,18 @@
-import { Hono } from 'hono';
 import { getAssetFromKV } from '@cloudflare/kv-asset-handler';
-
-const app = new Hono();
 
 // Mock data functions
 function getCurrentMetrics() {
   return [
-    {
-      id: '1',
-      type: 'water_level',
-      value: 6.2,
-      unit: 'm',
-      location: 'Brahmaputra River, Gazipur',
-      district: 'Gazipur',
-      division: 'Dhaka',
-      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-      severity: 'caution',
-      trend: { value: 12, direction: 'up' },
-    },
-    {
-      id: '2',
-      type: 'wind_speed',
-      value: 45,
-      unit: 'km/h',
-      location: "Cox's Bazar",
-      district: "Cox's Bazar",
-      division: 'Chittagong',
-      timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
-      severity: 'critical',
-      trend: { value: 18, direction: 'up' },
-    },
+    { id: '1', type: 'water_level', value: 6.2, unit: 'm', location: 'Brahmaputra River, Gazipur', district: 'Gazipur', severity: 'caution' },
+    { id: '2', type: 'wind_speed', value: 45, unit: 'km/h', location: "Cox's Bazar", district: "Cox's Bazar", severity: 'critical' },
+    { id: '3', type: 'temperature', value: 32, unit: '°C', location: 'Dhaka', district: 'Dhaka', severity: 'safe' },
   ];
 }
 
 function getActiveAlerts() {
   return [
-    {
-      id: '1',
-      severity: 'critical',
-      type: 'Flood Warning',
-      location: 'Gazipur District',
-      district: 'Gazipur',
-      division: 'Dhaka',
-      description: 'Water level rising rapidly in Brahmaputra River.',
-      timestamp: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
-      coordinates: { lat: 24.0, lon: 90.4 },
-    },
+    { id: '1', severity: 'critical', type: 'Flood Warning', location: 'Gazipur District', description: 'Water level rising rapidly' },
+    { id: '2', severity: 'high', type: 'Cyclone Alert', location: "Cox's Bazar", description: 'Tropical cyclone approaching' },
   ];
 }
 
@@ -68,106 +35,113 @@ function getClimateData(year: number = 2024) {
 
 function getDistrictData() {
   return [
-    { district: 'Dhaka', waterLevel: '5.2', rainfall: '145', status: 'Normal', division: 'Dhaka' },
-    { district: 'Chittagong', waterLevel: '6.8', rainfall: '320', status: 'Caution', division: 'Chittagong' },
-    { district: 'Sylhet', waterLevel: '7.5', rainfall: '450', status: 'Warning', division: 'Sylhet' },
+    { district: 'Dhaka', waterLevel: '5.2', rainfall: '145', status: 'Normal' },
+    { district: 'Chittagong', waterLevel: '6.8', rainfall: '320', status: 'Caution' },
+    { district: 'Sylhet', waterLevel: '7.5', rainfall: '450', status: 'Warning' },
   ];
 }
 
 function getRegionData(district: string) {
   const regions: Record<string, any> = {
-    gazipur: {
-      name: 'Gazipur',
-      division: 'Dhaka',
-      population: '5.2 million',
-      riskLevel: 'high',
-      waterLevel: '6.8m',
-      rainfall: '145mm',
-      alerts: 2,
-    },
-    dhaka: {
-      name: 'Dhaka',
-      division: 'Dhaka',
-      population: '21.7 million',
-      riskLevel: 'medium',
-      waterLevel: '5.2m',
-      rainfall: '98mm',
-      alerts: 1,
-    },
+    gazipur: { name: 'Gazipur', population: '5.2 million', riskLevel: 'high', waterLevel: '6.8m' },
+    dhaka: { name: 'Dhaka', population: '21.7 million', riskLevel: 'medium', waterLevel: '5.2m' },
   };
   return regions[district.toLowerCase()] || null;
 }
 
-// API Routes
-app.get('/api/alerts', (c) => {
-  return c.json(getActiveAlerts());
-});
+// API Router
+async function handleAPIRequest(request: Request): Promise<Response> {
+  const url = new URL(request.url);
+  const path = url.pathname;
 
-app.get('/api/climate/data', (c) => {
-  const yearParam = c.req.query('year');
-  const year = yearParam ? parseInt(yearParam) : 2024;
-  return c.json(getClimateData(year));
-});
-
-app.get('/api/districts/data', (c) => {
-  return c.json(getDistrictData());
-});
-
-app.get('/api/metrics/current', (c) => {
-  return c.json(getCurrentMetrics());
-});
-
-app.get('/api/region/:district', (c) => {
-  const district = c.req.param('district');
-  const data = getRegionData(district);
-  if (!data) {
-    return c.json({ error: 'District not found' }, 404);
+  // API Routes
+  if (path === '/api/alerts') {
+    return new Response(JSON.stringify(getActiveAlerts()), {
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
-  return c.json(data);
-});
 
-app.get('/api/satellite/search', (c) => {
-  return c.json({ message: 'Satellite API - Coming soon', features: [] });
-});
+  if (path === '/api/climate/data') {
+    const year = parseInt(url.searchParams.get('year') || '2024');
+    return new Response(JSON.stringify(getClimateData(year)), {
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
 
-app.get('/api/satellite/sentinel1/latest', (c) => {
-  return c.json({ message: 'Sentinel-1 API - Coming soon', features: [] });
-});
+  if (path === '/api/districts/data') {
+    return new Response(JSON.stringify(getDistrictData()), {
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
 
-app.get('/api/satellite/sentinel2/latest', (c) => {
-  return c.json({ message: 'Sentinel-2 API - Coming soon', features: [] });
-});
+  if (path === '/api/metrics/current') {
+    return new Response(JSON.stringify(getCurrentMetrics()), {
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
 
-// Handle all other routes - serve static assets from Workers Sites KV
-app.get('*', async (c) => {
-  try {
-    return await getAssetFromKV(
-      {
-        request: c.req.raw,
-        waitUntil: () => {},
-      },
-      {
-        ASSET_NAMESPACE: c.env.__STATIC_CONTENT,
-        ASSET_MANIFEST: JSON.parse(__STATIC_CONTENT_MANIFEST),
-      }
-    );
-  } catch (e) {
-    // If asset not found, serve index.html for SPA routing
+  if (path.startsWith('/api/region/')) {
+    const district = path.split('/api/region/')[1];
+    const data = getRegionData(district);
+    if (!data) {
+      return new Response(JSON.stringify({ error: 'District not found' }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    return new Response(JSON.stringify(data), {
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  if (path.startsWith('/api/satellite/')) {
+    return new Response(JSON.stringify({ message: 'Satellite API - Coming soon', features: [] }), {
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  return new Response('API endpoint not found', { status: 404 });
+}
+
+// Main fetch handler
+export default {
+  async fetch(request: Request, env: any, ctx: any): Promise<Response> {
+    const url = new URL(request.url);
+
+    // Handle API routes
+    if (url.pathname.startsWith('/api/')) {
+      return handleAPIRequest(request);
+    }
+
+    // Serve static assets from Workers Sites
     try {
       return await getAssetFromKV(
         {
-          request: new Request(new URL('/index.html', c.req.url).toString()),
-          waitUntil: () => {},
+          request,
+          waitUntil: ctx.waitUntil.bind(ctx),
         },
         {
-          ASSET_NAMESPACE: c.env.__STATIC_CONTENT,
+          ASSET_NAMESPACE: env.__STATIC_CONTENT,
           ASSET_MANIFEST: JSON.parse(__STATIC_CONTENT_MANIFEST),
         }
       );
-    } catch (err) {
-      return c.text('Not Found', 404);
+    } catch (e) {
+      // If asset not found, try serving index.html for SPA routing
+      try {
+        const indexRequest = new Request(new URL('/index.html', request.url).toString(), request);
+        return await getAssetFromKV(
+          {
+            request: indexRequest,
+            waitUntil: ctx.waitUntil.bind(ctx),
+          },
+          {
+            ASSET_NAMESPACE: env.__STATIC_CONTENT,
+            ASSET_MANIFEST: JSON.parse(__STATIC_CONTENT_MANIFEST),
+          }
+        );
+      } catch (err) {
+        return new Response('Not Found', { status: 404 });
+      }
     }
-  }
-});
-
-export default app;
+  },
+};
