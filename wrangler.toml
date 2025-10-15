@@ -1,6 +1,20 @@
-name = "bd01"
+name = "bengalinsight"
 compatibility_date = "2024-10-14"
 pages_build_output_dir = "dist"
 
+# Build configuration
+[build]
+command = "npm run build"
+
+# Environment variables
 [vars]
 ENVIRONMENT = "production"
+
+# Node.js compatibility for functions
+[build.upload]
+format = "modules"
+
+# Functions configuration
+[functions]
+# CF Pages Functions are automatically picked up from /functions directory
+# No additional configuration needed as they use the standard CF Pages Functions format

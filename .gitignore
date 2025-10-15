@@ -1,5 +1,56 @@
-# Cloudflare
-.dev.vars
-.wrangler/
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
 dist/
+.vite/
 .cloudflare/
+.wrangler/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+.dev.vars
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Editor directories
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+.cache/
+
+# Local development
+.local/
+.replit
+replit.nix
+
+# Database
+*.db
+*.sqlite
+
+# Testing
+coverage/
+.nyc_output/
+
+# TypeScript
+*.tsbuildinfo
+
+# Build artifacts
+*.js.map
+*.css.map
