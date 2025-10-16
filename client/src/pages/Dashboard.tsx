@@ -8,13 +8,14 @@ import { RegionDetailPanel } from "@/components/RegionDetailPanel";
 import { DateRangeSelector } from "@/components/DateRangeSelector";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Bell, Filter, Droplets, Wind, ThermometerSun, CloudRain, AlertTriangle, MapPin, Activity } from "lucide-react";
+import { Bell, Filter, Droplets, Wind, ThermometerSun, CloudRain, AlertTriangle, MapPin, TrendingUp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import type { EnvironmentalMetric, Alert } from "@shared/schema";
 
 export default function Dashboard() {
   const [selectedRegion, setSelectedRegion] = useState<any>(null);
+  const [showAlerts, setShowAlerts] = useState(true);
 
   const { data: metrics = [] } = useQuery<EnvironmentalMetric[]>({
     queryKey: ['/api/metrics/current'],
@@ -46,232 +47,166 @@ export default function Dashboard() {
     }
   };
 
-  const criticalAlerts = alerts.filter(a => a.severity === 'critical').length;
-  const highAlerts = alerts.filter(a => a.severity === 'high').length;
+  const criticalAlerts = alerts.filter(a => a.severity === 'critical' || a.severity === 'high').length;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
-      {/* Header */}
-      <header className="border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60 sticky top-0 z-50">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between gap-4 flex-wrap">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <Activity className="h-6 w-6 text-primary" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold tracking-tight">Bangladesh Environmental Monitor</h1>
-                <p className="text-sm text-muted-foreground">Real-time data from Microsoft Planetary Computer</p>
-              </div>
+    <div className="flex flex-col h-screen overflow-hidden bg-background">
+      {/* Fixed Header */}
+      <header className="flex-none border-b bg-card/50 backdrop-blur-sm">
+        <div className="max-w-[1600px] mx-auto px-6 py-4">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-bold">Bangladesh Environmental Monitor</h1>
+              <p className="text-sm text-muted-foreground">Microsoft Planetary Computer • Real-time Data</p>
             </div>
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-3">
               <DateRangeSelector />
               <Button variant="outline" size="icon">
                 <Filter className="h-4 w-4" />
+              </Button>
+              <Button 
+                variant={criticalAlerts > 0 ? "destructive" : "outline"} 
+                size="sm"
+                className="gap-2"
+                onClick={() => setShowAlerts(!showAlerts)}
+              >
+                <Bell className="h-4 w-4" />
+                {criticalAlerts > 0 && <Badge variant="secondary">{criticalAlerts}</Badge>}
               </Button>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Main Content - Scrollable */}
-      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 pb-12">
-        {/* Environmental Metrics - PROMINENT AT TOP */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-xl">
-              <Activity className="h-6 w-6" />
-              Environmental Metrics
-            </CardTitle>
-            <CardDescription>
-              Real-time readings from monitoring stations across Bangladesh
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {metrics.map((metric) => (
-                <MetricCard
-                  key={metric.id}
-                  title={metric.type.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
-                  value={metric.value.toString()}
-                  unit={metric.unit}
-                  severity={metric.severity}
-                  icon={getIconForMetricType(metric.type)}
-                  trend={metric.trend}
-                  lastUpdated={new Date(metric.timestamp).toLocaleString('en-US', { 
-                    hour: 'numeric', 
-                    minute: 'numeric',
-                    hour12: true 
-                  })}
-                />
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Stats Overview */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="border-l-4 border-l-red-500">
-            <CardHeader className="pb-2">
-              <CardDescription className="flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4" />
-                Critical Alerts
-              </CardDescription>
-              <CardTitle className="text-3xl font-bold">{criticalAlerts}</CardTitle>
-            </CardHeader>
-          </Card>
-          <Card className="border-l-4 border-l-orange-500">
-            <CardHeader className="pb-2">
-              <CardDescription className="flex items-center gap-2">
-                <Bell className="h-4 w-4" />
-                High Priority
-              </CardDescription>
-              <CardTitle className="text-3xl font-bold">{highAlerts}</CardTitle>
-            </CardHeader>
-          </Card>
-          <Card className="border-l-4 border-l-blue-500">
-            <CardHeader className="pb-2">
-              <CardDescription className="flex items-center gap-2">
-                <Activity className="h-4 w-4" />
-                Active Sensors
-              </CardDescription>
-              <CardTitle className="text-3xl font-bold">{metrics.length}</CardTitle>
-            </CardHeader>
-          </Card>
-          <Card className="border-l-4 border-l-green-500">
-            <CardHeader className="pb-2">
-              <CardDescription className="flex items-center gap-2">
-                <MapPin className="h-4 w-4" />
-                Regions Monitored
-              </CardDescription>
-              <CardTitle className="text-3xl font-bold">{new Set(metrics.map(m => m.district)).size}</CardTitle>
-            </CardHeader>
-          </Card>
-        </div>
-
-        {/* Main Grid - Map and Alerts */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Map */}
-          <div className="lg:col-span-2">
-            <Card className="overflow-hidden">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MapPin className="h-5 w-5" />
-                  Interactive Map
-                </CardTitle>
-                <CardDescription>
-                  Click markers for details • Zoom limited to Bangladesh region (1000km radius)
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-0 relative">
-                <InteractiveMap 
-                  alerts={alerts} 
-                  metrics={metrics}
-                  className="h-[500px] rounded-none border-0"
-                />
-                {/* Layer Control Panel - Overlaid on map */}
-                <div className="absolute top-4 left-4 z-10">
-                  <LayerControlPanel />
-                </div>
-              </CardContent>
-            </Card>
+      {/* Scrollable Content */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-[1600px] mx-auto p-6 space-y-6">
+          
+          {/* Hero Metrics - Clean, Single Row */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {metrics.map((metric) => (
+              <MetricCard
+                key={metric.id}
+                title={metric.type.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
+                value={metric.value.toString()}
+                unit={metric.unit}
+                severity={metric.severity}
+                icon={getIconForMetricType(metric.type)}
+                trend={metric.trend}
+                lastUpdated={new Date(metric.timestamp).toLocaleString('en-US', { 
+                  hour: 'numeric', 
+                  minute: 'numeric',
+                  hour12: true 
+                })}
+              />
+            ))}
           </div>
 
-          {/* Right Column - Alerts */}
-          <div>
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span className="flex items-center gap-2">
-                    <Bell className="h-5 w-5" />
-                    Active Alerts
-                  </span>
-                  <Badge variant="destructive">{alerts.length}</Badge>
-                </CardTitle>
-                <CardDescription>
-                  Current warnings and advisories
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Tabs defaultValue="all" className="w-full">
-                  <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="all">All</TabsTrigger>
-                    <TabsTrigger value="critical">Critical</TabsTrigger>
-                    <TabsTrigger value="high">High</TabsTrigger>
-                  </TabsList>
-                  <TabsContent value="all" className="space-y-3 mt-4 max-h-[600px] overflow-y-auto pr-2">
+          {/* Main Content Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            
+            {/* Map - Takes 3 columns */}
+            <div className="lg:col-span-3">
+              <Card>
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-lg">Live Map</CardTitle>
+                      <CardDescription className="text-xs">
+                        Interactive monitoring • Click markers for details
+                      </CardDescription>
+                    </div>
+                    <Badge variant="outline" className="gap-1.5">
+                      <MapPin className="h-3 w-3" />
+                      {metrics.length} Active
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-0 relative">
+                  <InteractiveMap 
+                    alerts={alerts} 
+                    metrics={metrics}
+                    className="h-[600px] rounded-b-lg border-0"
+                  />
+                  {/* Layer Controls */}
+                  <div className="absolute bottom-4 left-4 z-10">
+                    <LayerControlPanel />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Alerts Sidebar - Takes 1 column */}
+            <div className="lg:col-span-1">
+              <Card className="h-full">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4 text-destructive" />
+                      Alerts
+                    </CardTitle>
+                    <Badge variant="destructive">{alerts.length}</Badge>
+                  </div>
+                  <CardDescription className="text-xs">Active warnings</CardDescription>
+                </CardHeader>
+                <Separator />
+                <CardContent className="p-0">
+                  <div className="max-h-[550px] overflow-y-auto p-4 space-y-3">
                     {alerts.map((alert) => (
                       <AlertCard
                         key={alert.id}
                         severity={alert.severity}
                         type={alert.type}
-                        location={`${alert.division} Division, ${alert.district}`}
+                        location={`${alert.district}, ${alert.division}`}
                         description={alert.description}
                         timestamp={new Date(alert.timestamp).toLocaleString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
                           hour: 'numeric',
-                          minute: 'numeric',
+                          minute: '2-digit',
                           hour12: true
                         })}
                         onViewDetails={() => handleViewAlertDetails(alert)}
                       />
                     ))}
-                  </TabsContent>
-                  <TabsContent value="critical" className="space-y-3 mt-4 max-h-[600px] overflow-y-auto pr-2">
-                    {alerts.filter(a => a.severity === 'critical').map((alert) => (
-                      <AlertCard
-                        key={alert.id}
-                        severity={alert.severity}
-                        type={alert.type}
-                        location={`${alert.division} Division, ${alert.district}`}
-                        description={alert.description}
-                        timestamp={new Date(alert.timestamp).toLocaleString('en-US', {
-                          hour: 'numeric',
-                          minute: 'numeric',
-                          hour12: true
-                        })}
-                        onViewDetails={() => handleViewAlertDetails(alert)}
-                      />
-                    ))}
-                  </TabsContent>
-                  <TabsContent value="high" className="space-y-3 mt-4 max-h-[600px] overflow-y-auto pr-2">
-                    {alerts.filter(a => a.severity === 'high').map((alert) => (
-                      <AlertCard
-                        key={alert.id}
-                        severity={alert.severity}
-                        type={alert.type}
-                        location={`${alert.division} Division, ${alert.district}`}
-                        description={alert.description}
-                        timestamp={new Date(alert.timestamp).toLocaleString('en-US', {
-                          hour: 'numeric',
-                          minute: 'numeric',
-                          hour12: true
-                        })}
-                        onViewDetails={() => handleViewAlertDetails(alert)}
-                      />
-                    ))}
-                  </TabsContent>
-                </Tabs>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
+          {/* Region Details - Full Width when active */}
+          {selectedRegion && (
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>{selectedRegion.name}</CardTitle>
+                    <CardDescription>{selectedRegion.division} Division</CardDescription>
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => setSelectedRegion(null)}
+                  >
+                    Close
+                  </Button>
+                </div>
+              </CardHeader>
+              <Separator />
+              <CardContent className="pt-6">
+                <RegionDetailPanel
+                  region={selectedRegion}
+                  onClose={() => setSelectedRegion(null)}
+                />
               </CardContent>
             </Card>
-          </div>
-        </div>
+          )}
 
-        {/* Region Details - Full Width when opened */}
-        {selectedRegion && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Region Details: {selectedRegion.name}</CardTitle>
-              <CardDescription>{selectedRegion.division} Division</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <RegionDetailPanel
-                region={selectedRegion}
-                onClose={() => setSelectedRegion(null)}
-              />
-            </CardContent>
-          </Card>
-        )}
-      </main>
+          {/* Bottom Spacer for scroll comfort */}
+          <div className="h-8" />
+        </div>
+      </div>
     </div>
   );
 }
