@@ -3,12 +3,12 @@ import { useQuery } from "@tanstack/react-query";
 import { InteractiveMap } from "@/components/InteractiveMap";
 import { MetricCard } from "@/components/MetricCard";
 import { AlertCard } from "@/components/AlertCard";
-import { LayerControlPanel } from "@/components/LayerControlPanel";
+import { CollapsibleLayerControl } from "@/components/CollapsibleLayerControl";
 import { RegionDetailPanel } from "@/components/RegionDetailPanel";
 import { DateRangeSelector } from "@/components/DateRangeSelector";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Bell, Filter, Droplets, Wind, ThermometerSun, CloudRain, AlertTriangle, MapPin, TrendingUp } from "lucide-react";
+import { Bell, Filter, Droplets, Wind, ThermometerSun, CloudRain, AlertTriangle, MapPin } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import type { EnvironmentalMetric, Alert } from "@shared/schema";
@@ -47,8 +47,6 @@ export default function Dashboard() {
     }
   };
 
-  const criticalAlerts = alerts.filter(a => a.severity === 'critical' || a.severity === 'high').length;
-
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-background">
       {/* Fixed Header */}
@@ -65,13 +63,13 @@ export default function Dashboard() {
                 <Filter className="h-4 w-4" />
               </Button>
               <Button 
-                variant={criticalAlerts > 0 ? "destructive" : "outline"} 
+                variant={alerts.length > 0 ? "destructive" : "outline"} 
                 size="sm"
                 className="gap-2"
                 onClick={() => setShowAlerts(!showAlerts)}
               >
                 <Bell className="h-4 w-4" />
-                {criticalAlerts > 0 && <Badge variant="secondary">{criticalAlerts}</Badge>}
+                <Badge variant="secondary">{alerts.length}</Badge>
               </Button>
             </div>
           </div>
@@ -82,23 +80,24 @@ export default function Dashboard() {
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-[1600px] mx-auto p-6 space-y-6">
           
-          {/* Hero Metrics - Clean, Single Row */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Hero Metrics - Slimmer, Cleaner */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {metrics.map((metric) => (
-              <MetricCard
-                key={metric.id}
-                title={metric.type.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
-                value={metric.value.toString()}
-                unit={metric.unit}
-                severity={metric.severity}
-                icon={getIconForMetricType(metric.type)}
-                trend={metric.trend}
-                lastUpdated={new Date(metric.timestamp).toLocaleString('en-US', { 
-                  hour: 'numeric', 
-                  minute: 'numeric',
-                  hour12: true 
-                })}
-              />
+              <div key={metric.id} className="h-full">
+                <MetricCard
+                  title={metric.type.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
+                  value={metric.value.toString()}
+                  unit={metric.unit}
+                  severity={metric.severity}
+                  icon={getIconForMetricType(metric.type)}
+                  trend={metric.trend}
+                  lastUpdated={new Date(metric.timestamp).toLocaleString('en-US', { 
+                    hour: 'numeric', 
+                    minute: 'numeric',
+                    hour12: true 
+                  })}
+                />
+              </div>
             ))}
           </div>
 
@@ -113,7 +112,7 @@ export default function Dashboard() {
                     <div>
                       <CardTitle className="text-lg">Live Map</CardTitle>
                       <CardDescription className="text-xs">
-                        Interactive monitoring • Click markers for details
+                        Interactive monitoring • Zoom: 1000km radius from Dhaka
                       </CardDescription>
                     </div>
                     <Badge variant="outline" className="gap-1.5">
@@ -128,9 +127,9 @@ export default function Dashboard() {
                     metrics={metrics}
                     className="h-[600px] rounded-b-lg border-0"
                   />
-                  {/* Layer Controls */}
+                  {/* Collapsible Layer Controls - Bottom Left */}
                   <div className="absolute bottom-4 left-4 z-10">
-                    <LayerControlPanel />
+                    <CollapsibleLayerControl />
                   </div>
                 </CardContent>
               </Card>
@@ -152,23 +151,29 @@ export default function Dashboard() {
                 <Separator />
                 <CardContent className="p-0">
                   <div className="max-h-[550px] overflow-y-auto p-4 space-y-3">
-                    {alerts.map((alert) => (
-                      <AlertCard
-                        key={alert.id}
-                        severity={alert.severity}
-                        type={alert.type}
-                        location={`${alert.district}, ${alert.division}`}
-                        description={alert.description}
-                        timestamp={new Date(alert.timestamp).toLocaleString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          hour: 'numeric',
-                          minute: '2-digit',
-                          hour12: true
-                        })}
-                        onViewDetails={() => handleViewAlertDetails(alert)}
-                      />
-                    ))}
+                    {alerts.length > 0 ? (
+                      alerts.map((alert) => (
+                        <AlertCard
+                          key={alert.id}
+                          severity={alert.severity}
+                          type={alert.type}
+                          location={`${alert.district}, ${alert.division}`}
+                          description={alert.description}
+                          timestamp={new Date(alert.timestamp).toLocaleString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            hour: 'numeric',
+                            minute: '2-digit',
+                            hour12: true
+                          })}
+                          onViewDetails={() => handleViewAlertDetails(alert)}
+                        />
+                      ))
+                    ) : (
+                      <div className="text-center py-8 text-muted-foreground text-sm">
+                        No active alerts
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -181,7 +186,7 @@ export default function Dashboard() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle>{selectedRegion.name}</CardTitle>
+                    <CardTitle>Region Details: {selectedRegion.name}</CardTitle>
                     <CardDescription>{selectedRegion.division} Division</CardDescription>
                   </div>
                   <Button 
@@ -195,15 +200,42 @@ export default function Dashboard() {
               </CardHeader>
               <Separator />
               <CardContent className="pt-6">
-                <RegionDetailPanel
-                  region={selectedRegion}
-                  onClose={() => setSelectedRegion(null)}
-                />
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Population</p>
+                    <p className="text-2xl font-bold">{selectedRegion.population}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Risk Level</p>
+                    <Badge 
+                      variant={selectedRegion.riskLevel === 'critical' ? 'destructive' : 'secondary'}
+                      className="text-sm"
+                    >
+                      {selectedRegion.riskLevel}
+                    </Badge>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Water Level</p>
+                    <p className="text-2xl font-bold">{selectedRegion.waterLevel}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Rainfall (24h)</p>
+                    <p className="text-2xl font-bold">{selectedRegion.rainfall}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Elevation</p>
+                    <p className="text-2xl font-bold">{selectedRegion.elevation}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Active Alerts</p>
+                    <p className="text-2xl font-bold text-destructive">{selectedRegion.alerts}</p>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           )}
 
-          {/* Bottom Spacer for scroll comfort */}
+          {/* Bottom Spacer */}
           <div className="h-8" />
         </div>
       </div>
