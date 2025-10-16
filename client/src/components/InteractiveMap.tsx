@@ -63,7 +63,7 @@ export function InteractiveMap({ alerts = [], metrics = [] }: InteractiveMapProp
   }, []);
 
   return (
-    <div className="w-full rounded-lg overflow-hidden border shadow-lg" style={{ height: '600px' }}>
+    <div className="h-full w-full">
       <MapContainer
         center={bangladeshCenter}
         zoom={7}
@@ -71,7 +71,7 @@ export function InteractiveMap({ alerts = [], metrics = [] }: InteractiveMapProp
         className="z-0"
         scrollWheelZoom={true}
       >
-        {/* English tile layer - using CartoDB Positron which has English labels */}
+        {/* English tile layer - using CartoDB Voyager which has English labels */}
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
           url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
