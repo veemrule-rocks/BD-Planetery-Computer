@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { InteractiveMap } from "@/components/InteractiveMap";
 import { MetricCard } from "@/components/MetricCard";
 import { AlertCard } from "@/components/AlertCard";
+import { LayerControlPanel } from "@/components/LayerControlPanel";
 import { RegionDetailPanel } from "@/components/RegionDetailPanel";
 import { DateRangeSelector } from "@/components/DateRangeSelector";
 import { Button } from "@/components/ui/button";
@@ -10,7 +11,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Bell, Filter, Droplets, Wind, ThermometerSun, CloudRain, AlertTriangle, MapPin, Activity } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import type { EnvironmentalMetric, Alert } from "@shared/schema";
 
 export default function Dashboard() {
@@ -74,8 +74,41 @@ export default function Dashboard() {
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+      {/* Main Content - Scrollable */}
+      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 pb-12">
+        {/* Environmental Metrics - PROMINENT AT TOP */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-xl">
+              <Activity className="h-6 w-6" />
+              Environmental Metrics
+            </CardTitle>
+            <CardDescription>
+              Real-time readings from monitoring stations across Bangladesh
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {metrics.map((metric) => (
+                <MetricCard
+                  key={metric.id}
+                  title={metric.type.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
+                  value={metric.value.toString()}
+                  unit={metric.unit}
+                  severity={metric.severity}
+                  icon={getIconForMetricType(metric.type)}
+                  trend={metric.trend}
+                  lastUpdated={new Date(metric.timestamp).toLocaleString('en-US', { 
+                    hour: 'numeric', 
+                    minute: 'numeric',
+                    hour12: true 
+                  })}
+                />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Stats Overview */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card className="border-l-4 border-l-red-500">
@@ -116,11 +149,10 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        {/* Main Grid */}
+        {/* Main Grid - Map and Alerts */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Map & Metrics */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Map */}
+          {/* Left Column - Map */}
+          <div className="lg:col-span-2">
             <Card className="overflow-hidden">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -128,56 +160,26 @@ export default function Dashboard() {
                   Interactive Map
                 </CardTitle>
                 <CardDescription>
-                  Click markers for detailed information • Zoom limited to Bangladesh region
+                  Click markers for details • Zoom limited to Bangladesh region (1000km radius)
                 </CardDescription>
               </CardHeader>
-              <CardContent className="p-0">
+              <CardContent className="p-0 relative">
                 <InteractiveMap 
                   alerts={alerts} 
                   metrics={metrics}
                   className="h-[500px] rounded-none border-0"
                 />
-              </CardContent>
-            </Card>
-
-            {/* Environmental Metrics */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Activity className="h-5 w-5" />
-                  Environmental Metrics
-                </CardTitle>
-                <CardDescription>
-                  Real-time readings from monitoring stations
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {metrics.map((metric) => (
-                    <MetricCard
-                      key={metric.id}
-                      title={metric.type.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
-                      value={metric.value.toString()}
-                      unit={metric.unit}
-                      severity={metric.severity}
-                      icon={getIconForMetricType(metric.type)}
-                      trend={metric.trend}
-                      lastUpdated={new Date(metric.timestamp).toLocaleString('en-US', { 
-                        hour: 'numeric', 
-                        minute: 'numeric',
-                        hour12: true 
-                      })}
-                    />
-                  ))}
+                {/* Layer Control Panel - Overlaid on map */}
+                <div className="absolute top-4 left-4 z-10">
+                  <LayerControlPanel />
                 </div>
               </CardContent>
             </Card>
           </div>
 
-          {/* Right Column - Alerts & Details */}
-          <div className="space-y-6">
-            {/* Active Alerts */}
-            <Card className="lg:sticky lg:top-24">
+          {/* Right Column - Alerts */}
+          <div>
+            <Card>
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                   <span className="flex items-center gap-2">
@@ -197,7 +199,7 @@ export default function Dashboard() {
                     <TabsTrigger value="critical">Critical</TabsTrigger>
                     <TabsTrigger value="high">High</TabsTrigger>
                   </TabsList>
-                  <TabsContent value="all" className="space-y-3 mt-4 max-h-[600px] overflow-y-auto">
+                  <TabsContent value="all" className="space-y-3 mt-4 max-h-[600px] overflow-y-auto pr-2">
                     {alerts.map((alert) => (
                       <AlertCard
                         key={alert.id}
@@ -214,7 +216,7 @@ export default function Dashboard() {
                       />
                     ))}
                   </TabsContent>
-                  <TabsContent value="critical" className="space-y-3 mt-4 max-h-[600px] overflow-y-auto">
+                  <TabsContent value="critical" className="space-y-3 mt-4 max-h-[600px] overflow-y-auto pr-2">
                     {alerts.filter(a => a.severity === 'critical').map((alert) => (
                       <AlertCard
                         key={alert.id}
@@ -231,7 +233,7 @@ export default function Dashboard() {
                       />
                     ))}
                   </TabsContent>
-                  <TabsContent value="high" className="space-y-3 mt-4 max-h-[600px] overflow-y-auto">
+                  <TabsContent value="high" className="space-y-3 mt-4 max-h-[600px] overflow-y-auto pr-2">
                     {alerts.filter(a => a.severity === 'high').map((alert) => (
                       <AlertCard
                         key={alert.id}
@@ -251,24 +253,24 @@ export default function Dashboard() {
                 </Tabs>
               </CardContent>
             </Card>
-
-            {/* Region Details */}
-            {selectedRegion && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Region Details</CardTitle>
-                  <CardDescription>{selectedRegion.name}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <RegionDetailPanel
-                    region={selectedRegion}
-                    onClose={() => setSelectedRegion(null)}
-                  />
-                </CardContent>
-              </Card>
-            )}
           </div>
         </div>
+
+        {/* Region Details - Full Width when opened */}
+        {selectedRegion && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Region Details: {selectedRegion.name}</CardTitle>
+              <CardDescription>{selectedRegion.division} Division</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <RegionDetailPanel
+                region={selectedRegion}
+                onClose={() => setSelectedRegion(null)}
+              />
+            </CardContent>
+          </Card>
+        )}
       </main>
     </div>
   );

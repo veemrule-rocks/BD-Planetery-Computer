@@ -54,8 +54,6 @@ export function InteractiveMap({ alerts = [], metrics = [], className = '' }: In
   const bangladeshCenter: LatLngExpression = [23.8103, 90.4125];
   
   // Define max bounds - roughly 1000km radius from Dhaka covering Bangladesh
-  // Southwest corner: ~20.5°N, 88.0°E
-  // Northeast corner: ~26.6°N, 92.7°E
   const maxBounds = new LatLngBounds(
     [20.5, 88.0],  // Southwest
     [26.6, 92.7]   // Northeast
@@ -84,10 +82,10 @@ export function InteractiveMap({ alerts = [], metrics = [], className = '' }: In
         className="z-0"
         scrollWheelZoom={true}
       >
-        {/* English tile layer - CartoDB Voyager */}
+        {/* Original OpenStreetMap tiles with Bengali names */}
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
         {/* Alert Markers with Circles */}
