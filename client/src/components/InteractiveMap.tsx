@@ -2,7 +2,6 @@ import { MapContainer, TileLayer, Marker, Popup, Circle } from 'react-leaflet';
 import { Icon, LatLngExpression } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Alert, EnvironmentalMetric } from '@shared/schema';
-import { AlertCircle, Droplets, Wind, ThermometerSun, CloudRain } from 'lucide-react';
 import { useEffect } from 'react';
 
 interface InteractiveMapProps {
@@ -64,16 +63,18 @@ export function InteractiveMap({ alerts = [], metrics = [] }: InteractiveMapProp
   }, []);
 
   return (
-    <div className="h-full w-full relative">
+    <div className="w-full rounded-lg overflow-hidden border shadow-lg" style={{ height: '600px' }}>
       <MapContainer
         center={bangladeshCenter}
         zoom={7}
         style={{ height: '100%', width: '100%' }}
         className="z-0"
+        scrollWheelZoom={true}
       >
+        {/* English tile layer - using CartoDB Positron which has English labels */}
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
         />
 
         {/* Alert Markers with Circles */}
@@ -122,7 +123,6 @@ export function InteractiveMap({ alerts = [], metrics = [] }: InteractiveMapProp
         {/* Metric Markers */}
         {metrics.map((metric) => {
           // Generate approximate coordinates based on district
-          // In a real app, these would come from the API
           const districtCoords: Record<string, [number, number]> = {
             Dhaka: [23.8103, 90.4125],
             Gazipur: [24.0022, 90.4264],

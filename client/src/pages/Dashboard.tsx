@@ -8,8 +8,9 @@ import { RegionDetailPanel } from "@/components/RegionDetailPanel";
 import { DateRangeSelector } from "@/components/DateRangeSelector";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bell, Filter, Droplets, Wind, ThermometerSun, CloudRain } from "lucide-react";
+import { Bell, Filter, Droplets, Wind, ThermometerSun, CloudRain, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { EnvironmentalMetric, Alert } from "@shared/schema";
 
 export default function Dashboard() {
@@ -47,8 +48,8 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="h-screen flex flex-col">
-      <header className="border-b px-6 py-3 bg-card">
+    <div className="min-h-screen flex flex-col">
+      <header className="border-b px-6 py-3 bg-card sticky top-0 z-50">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>
             <h1 className="text-xl font-bold">Environmental Monitoring Dashboard</h1>
@@ -77,53 +78,58 @@ export default function Dashboard() {
         </div>
       </header>
 
-      <div className="flex-1 flex overflow-hidden">
-        <div className="flex-1 relative">
-          {/* Interactive Map with Data */}
-          <InteractiveMap alerts={alerts} metrics={metrics} />
-          
-          {/* Layer Control Panel - Top Left - z-20 to be above alerts */}
-          <div className="absolute top-4 left-4 z-20">
-            <LayerControlPanel />
-          </div>
-
-          {/* Metric Cards - Top Right - z-10 */}
-          <div className="absolute top-4 right-4 z-10 space-y-2">
-            <div className="grid grid-cols-2 gap-2 max-w-2xl">
-              {metrics.slice(0, 4).map((metric) => (
-                <MetricCard
-                  key={metric.id}
-                  title={metric.type.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
-                  value={metric.value.toString()}
-                  unit={metric.unit}
-                  severity={metric.severity}
-                  icon={getIconForMetricType(metric.type)}
-                  trend={metric.trend}
-                  lastUpdated={new Date(metric.timestamp).toLocaleString('en-US', { 
-                    hour: 'numeric', 
-                    minute: 'numeric',
-                    hour12: true 
-                  })}
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* Region Detail Panel - Bottom Right - z-30 highest priority when open */}
-          {selectedRegion && (
-            <div className="absolute bottom-4 right-4 z-30">
-              <RegionDetailPanel
-                region={selectedRegion}
-                onClose={() => setSelectedRegion(null)}
+      <div className="flex-1 overflow-auto">
+        <div className="container mx-auto p-6 space-y-6">
+          {/* Metric Cards Section */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {metrics.map((metric) => (
+              <MetricCard
+                key={metric.id}
+                title={metric.type.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
+                value={metric.value.toString()}
+                unit={metric.unit}
+                severity={metric.severity}
+                icon={getIconForMetricType(metric.type)}
+                trend={metric.trend}
+                lastUpdated={new Date(metric.timestamp).toLocaleString('en-US', { 
+                  hour: 'numeric', 
+                  minute: 'numeric',
+                  hour12: true 
+                })}
               />
-            </div>
-          )}
+            ))}
+          </div>
 
-          {/* Alert Panel - Bottom Left - z-10 */}
+          {/* Map Section with Layer Control */}
+          <div className="relative">
+            <InteractiveMap alerts={alerts} metrics={metrics} />
+            
+            {/* Layer Control Panel - Absolutely positioned on map */}
+            <div className="absolute top-4 left-4 z-10">
+              <LayerControlPanel />
+            </div>
+          </div>
+
+          {/* Alerts Section */}
           {showAlerts && alerts.length > 0 && (
-            <div className="absolute bottom-4 left-4 z-10 w-80 max-w-[calc(100vw-2rem)]">
-              <ScrollArea className="h-80 rounded-lg border bg-card">
-                <div className="space-y-2 p-2">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span className="flex items-center gap-2">
+                    <Bell className="h-5 w-5" />
+                    Active Alerts ({alerts.length})
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowAlerts(false)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {alerts.map((alert) => (
                     <AlertCard
                       key={alert.id}
@@ -140,8 +146,32 @@ export default function Dashboard() {
                     />
                   ))}
                 </div>
-              </ScrollArea>
-            </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Region Detail Panel */}
+          {selectedRegion && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span>Region Details: {selectedRegion.name}</span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setSelectedRegion(null)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <RegionDetailPanel
+                  region={selectedRegion}
+                  onClose={() => setSelectedRegion(null)}
+                />
+              </CardContent>
+            </Card>
           )}
         </div>
       </div>
