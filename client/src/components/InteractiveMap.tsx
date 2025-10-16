@@ -1,5 +1,5 @@
 import { MapContainer, TileLayer, Marker, Popup, Circle } from 'react-leaflet';
-import { Icon, LatLngExpression } from 'leaflet';
+import { Icon, LatLngExpression, LatLngBounds } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Alert, EnvironmentalMetric } from '@shared/schema';
 import { useEffect } from 'react';
@@ -7,6 +7,7 @@ import { useEffect } from 'react';
 interface InteractiveMapProps {
   alerts?: Alert[];
   metrics?: EnvironmentalMetric[];
+  className?: string;
 }
 
 // Fix for default marker icon in Leaflet with Vite
@@ -48,9 +49,17 @@ const getMetricIcon = (type: string) => {
   }
 };
 
-export function InteractiveMap({ alerts = [], metrics = [] }: InteractiveMapProps) {
-  // Bangladesh center coordinates
+export function InteractiveMap({ alerts = [], metrics = [], className = '' }: InteractiveMapProps) {
+  // Bangladesh center coordinates (Dhaka)
   const bangladeshCenter: LatLngExpression = [23.8103, 90.4125];
+  
+  // Define max bounds - roughly 1000km radius from Dhaka covering Bangladesh
+  // Southwest corner: ~20.5°N, 88.0°E
+  // Northeast corner: ~26.6°N, 92.7°E
+  const maxBounds = new LatLngBounds(
+    [20.5, 88.0],  // Southwest
+    [26.6, 92.7]   // Northeast
+  );
 
   useEffect(() => {
     // Fix Leaflet default marker icon paths
@@ -63,15 +72,19 @@ export function InteractiveMap({ alerts = [], metrics = [] }: InteractiveMapProp
   }, []);
 
   return (
-    <div className="h-full w-full">
+    <div className={`rounded-xl overflow-hidden border-2 shadow-xl ${className}`}>
       <MapContainer
         center={bangladeshCenter}
         zoom={7}
+        minZoom={6}
+        maxZoom={18}
+        maxBounds={maxBounds}
+        maxBoundsViscosity={1.0}
         style={{ height: '100%', width: '100%' }}
         className="z-0"
         scrollWheelZoom={true}
       >
-        {/* English tile layer - using CartoDB Voyager which has English labels */}
+        {/* English tile layer - CartoDB Voyager */}
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
           url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
@@ -122,7 +135,6 @@ export function InteractiveMap({ alerts = [], metrics = [] }: InteractiveMapProp
 
         {/* Metric Markers */}
         {metrics.map((metric) => {
-          // Generate approximate coordinates based on district
           const districtCoords: Record<string, [number, number]> = {
             Dhaka: [23.8103, 90.4125],
             Gazipur: [24.0022, 90.4264],
